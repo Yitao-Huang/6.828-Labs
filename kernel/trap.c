@@ -67,6 +67,43 @@ usertrap(void)
     syscall();
   } else if((which_dev = devintr()) != 0){
     // ok
+    if (which_dev == 2) {
+      if (p->alarm_interval) {
+        p->ticks_pass++;
+        if (p->ticks_pass == p->alarm_interval && p->alarmset == 0) {
+
+          p->usercontext.epc = p->trapframe->epc;
+          p->usercontext.ra = p->trapframe->ra;
+          p->usercontext.sp = p->trapframe->sp;
+          p->usercontext.gp = p->trapframe->gp;
+          p->usercontext.tp = p->trapframe->tp;
+          p->usercontext.s0 = p->trapframe->s0;
+          p->usercontext.s1 = p->trapframe->s1;
+          p->usercontext.a0 = p->trapframe->a0;
+          p->usercontext.a1 = p->trapframe->a1;
+          p->usercontext.a2 = p->trapframe->a2;
+          p->usercontext.a3 = p->trapframe->a3;
+          p->usercontext.a4 = p->trapframe->a4;
+          p->usercontext.a5 = p->trapframe->a5;
+          p->usercontext.a6 = p->trapframe->a6;
+          p->usercontext.a7 = p->trapframe->a7;
+          p->usercontext.s2 = p->trapframe->s2;
+          p->usercontext.s3 = p->trapframe->s3;
+          p->usercontext.s4 = p->trapframe->s4;
+          p->usercontext.s5 = p->trapframe->s5;
+          p->usercontext.s6 = p->trapframe->s6;
+          p->usercontext.s7 = p->trapframe->s7;
+          p->usercontext.s8 = p->trapframe->s8;
+          p->usercontext.s9 = p->trapframe->s9;
+          p->usercontext.s10 = p->trapframe->s10;
+          p->usercontext.s11 = p->trapframe->s11;
+
+          p->ticks_pass = 0;
+          p->trapframe->epc = (uint64)p->user_handler;
+          p->alarmset = 1;
+        }
+      }
+    }
   } else {
     printf("usertrap(): unexpected scause %p pid=%d\n", r_scause(), p->pid);
     printf("            sepc=%p stval=%p\n", r_sepc(), r_stval());
