@@ -68,9 +68,9 @@ usertrap(void)
   } else if((which_dev = devintr()) != 0){
     // ok
     if (which_dev == 2) {
-      if (p->alarm_interval) {
+      if (p->alarm_interval && p->alarmset == 0) {
         p->ticks_pass++;
-        if (p->ticks_pass == p->alarm_interval && p->alarmset == 0) {
+        if (p->ticks_pass == p->alarm_interval) {
 
           p->usercontext.epc = p->trapframe->epc;
           p->usercontext.ra = p->trapframe->ra;
