@@ -5,7 +5,10 @@
 #include "memlayout.h"
 #include "spinlock.h"
 #include "proc.h"
+#include "fs.h"
+#include "sleeplock.h"
 #include "fcntl.h"
+#include "file.h"
 
 uint64
 sys_exit(void)
@@ -120,7 +123,7 @@ sys_mmap(void)
   }
 
   if (prot & PROT_WRITE) {
-    if (!file->writeable && flag != MAP_PRIVATE) {
+    if (!file->writable && flag != MAP_PRIVATE) {
       return -1;
     }
   }
@@ -149,5 +152,42 @@ sys_munmap(void)
   argaddr(0, &addr);
   argint(1, (int*)&length);
 
-  return -1;
+  struct proc *p = myproc();
+
+  int index;
+  for (index = 0; index < NVMA; ++index) {
+    if (p->vma[index].addr <= addr && addr < p->vma[index].addr + p->vma[index].length) {
+      break;
+    }
+  }
+
+  if (index >= 16) {
+    return -1;
+  }
+
+  if (length > p->vma[index].length) {
+    return -1;
+  }
+
+  if (p->vma[index].flag == MAP_SHARED) {
+    filewrite(p->vma[index].file, addr, length);
+  }
+
+  uint64 va;
+  for (va = addr; va < addr + length; va += PGSIZE) {
+    pte_t *pte = walk(p->pagetable, va, 0);
+
+    if (*pte & PTE_V) {
+      uvmunmap(p->pagetable, va, 1, 0);
+    }
+  }
+
+  p->vma[index].addr = addr + length;
+  p->vma[index].length -= length;
+
+  if (p->vma[index].length == 0) {
+    fileclose(p->vma[index].file);
+  }
+
+  return 0;
 }
