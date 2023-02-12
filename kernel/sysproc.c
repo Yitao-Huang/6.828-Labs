@@ -5,6 +5,7 @@
 #include "memlayout.h"
 #include "spinlock.h"
 #include "proc.h"
+#include "fcntl.h"
 
 uint64
 sys_exit(void)
@@ -90,4 +91,63 @@ sys_uptime(void)
   xticks = ticks;
   release(&tickslock);
   return xticks;
+}
+
+uint64
+sys_mmap(void)
+{
+  uint64 addr;
+  uint length;
+  int prot;
+  int flag;
+  int fd;
+  uint offset;
+
+  argaddr(0, &addr);
+  argint(1, (int*)&length);
+  argint(2, &prot);
+  argint(3, &flag);
+  argint(4, &fd);
+  argint(5, (int*)&offset);
+
+  struct proc *p = myproc();
+  struct file *file = p->ofile[fd];
+
+  if (prot & PROT_READ) {
+    if (!file->readable) {
+      return -1;
+    }
+  }
+
+  if (prot & PROT_WRITE) {
+    if (!file->writeable && flag != MAP_PRIVATE) {
+      return -1;
+    }
+  }
+
+  for (int i = 0; i < NVMA; i++) {
+    if (!p->vma[i].length && p->vma[i].size >= length) {
+      p->vma[i].length = length;
+      p->vma[i].addr = p->vma[i].pos;
+      p->vma[i].file = file;
+      p->vma[i].flag = flag;
+      p->vma[i].prot = prot;
+      filedup(file);
+      return p->vma[i].addr;
+    }
+  }
+
+  return -1;
+}
+
+uint64
+sys_munmap(void)
+{
+  uint64 addr;
+  uint length;
+
+  argaddr(0, &addr);
+  argint(1, (int*)&length);
+
+  return -1;
 }

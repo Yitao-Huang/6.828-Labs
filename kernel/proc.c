@@ -146,6 +146,35 @@ found:
   p->context.ra = (uint64)forkret;
   p->context.sp = p->kstack + PGSIZE;
 
+  uint64 va = MAXVA - 2 * PGSIZE;
+  for (int i = 0; i < 6; ++i) {
+    va -= 2 * PGSIZE;
+    p->vma[i].size = 2 * PGSIZE;
+    p->vma[i].pos = va;
+  }
+
+  for (int i = 6; i < 10; ++i) {
+    va -= 4 * PGSIZE;
+    p->vma[i].size = 4 * PGSIZE;
+    p->vma[i].pos = va;
+  }
+
+  for (int i = 10; i < 13; ++i) {
+    va -= 8 * PGSIZE;
+    p->vma[i].size = 8 * PGSIZE;
+    p->vma[i].pos = va;
+  }
+
+  for (int i = 13; i < 15; ++i) {
+    va -= 16 * PGSIZE;
+    p->vma[i].size = 16 * PGSIZE;
+    p->vma[i].pos = va;
+  }
+
+  va -= 32 * PGSIZE;
+  p->vma[15].size = 32 * PGSIZE;
+  p->vma[15].pos = va;
+
   return p;
 }
 

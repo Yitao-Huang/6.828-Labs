@@ -65,6 +65,8 @@ usertrap(void)
     intr_on();
 
     syscall();
+  } else if (r_scause == 0xd) {
+
   } else if((which_dev = devintr()) != 0){
     // ok
   } else {
